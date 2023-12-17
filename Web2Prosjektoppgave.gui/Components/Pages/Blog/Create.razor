@@ -1,0 +1,63 @@
+﻿@page "/Blog/Create"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components
+@using Web2Prosjektoppgave.shared.ViewModels.Blog
+
+@inject Services.HttpHelper HttpHelper
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create new Blog</PageTitle>
+<h3 class="text-center">Create a new Blog</h3>
+
+@if (shouldRender)
+{
+    <div class="container">
+        <EditForm FormName="createBlog" Model="@blogCreateForm" OnValidSubmit="@CreateBlog">
+            <DataAnnotationsValidator />
+            <div class="col-md-10">
+                <div>
+                    <label for="title">Blog Title:</label>
+                    <InputText id="title" class="form-control" @bind-Value="@blogCreateForm.Title"/>
+                    <ValidationMessage class="text-danger" For="@(() => blogCreateForm.Title)"></ValidationMessage>
+                </div>
+                <div>
+                    <label for="description">Description:</label>
+                    <InputTextArea rows="4" id="description" class="form-control" @bind-Value="@blogCreateForm.Description"></InputTextArea>
+                    <ValidationMessage class="text-danger" For="@(() => blogCreateForm.Description)"></ValidationMessage>
+                </div>
+                <div class="d-flex justify-content-between m-3">
+                    <button type="button" class="btn btn-secondary" @onclick="GoBack">Go Back</button>
+                    <input type="submit" class="btn btn-primary" value="Create blog"/>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+}
+
+@code {
+    private bool getError;
+    private bool shouldRender;
+    [SupplyParameterFromForm]
+    public BlogCreateForm blogCreateForm { get; set; }
+
+    private async Task CreateBlog()
+    {
+        var response = await HttpHelper.PostAsync("https://localhost:7078/Blog", blogCreateForm);
+
+        getError = !response.IsSuccess;
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/Blog");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        shouldRender = true;
+        // "Null-coalescing assignment operator": returns the left hand existing variable unless it is null,
+        // in which case it it evaluates and returns the right hand result.
+        blogCreateForm ??= new();
+    }
+}

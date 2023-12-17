@@ -1,0 +1,59 @@
+﻿@page "/User"
+@using Web2Prosjektoppgave.shared.ViewModels.User
+@rendermode InteractiveServer
+
+@inject Services.HttpHelper HttpHelper
+@inject NavigationManager NavigationManager
+
+<PageTitle>User Info</PageTitle>
+<h3>User information</h3>
+
+@if (shouldRender)
+{
+    <div class="container mt-4 text-center">
+        <div class="row">
+            <div class="col-md-10">
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="card-text">Created at: @userItemView.CreatedAt</p>
+                                <p class="card-text">Created by: @userItemView.UserName</p>
+                                <p class="card-text">Created by: @userItemView.UserName</p>
+                                <p class="card-text">Email: @userItemView.Email</p>
+                                <button class="btn btn-primary" @onclick="GoToEditUser">Edit User</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool getError;
+    private bool shouldRender;
+    public UserItemView? userItemView { get; set; }
+
+    private void GoToEditUser()
+    {
+        NavigationManager.NavigateTo("/User/Edit");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        userItemView = await GetUser();
+
+        shouldRender = true;
+    }
+
+    private async Task<UserItemView> GetUser()
+    {
+        var response = await HttpHelper.GetAsync<UserItemView>("https://localhost:7078/User/1");
+
+        getError = !response.IsSuccess;
+
+        return response.Result;
+    }
+}

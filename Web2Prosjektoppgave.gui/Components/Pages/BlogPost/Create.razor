@@ -1,0 +1,70 @@
+﻿@page "/Blog/{BlogId}/BlogPost/Create"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components
+@using Web2Prosjektoppgave.shared.ViewModels.BlogPost
+
+@inject Services.HttpHelper HttpHelper
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>New Blog Post</PageTitle>
+<h1 class="text-center">Make a new Blog Post</h1>
+
+@if (shouldRender)
+{
+    <div class="container">
+        <EditForm FormName="createPost" Model="@blogPostCreateForm" OnValidSubmit="@CreateBlogPost">
+            <DataAnnotationsValidator />
+            <div class="col-md-10">
+                <input id="BlogId" type="hidden" @bind="blogPostCreateForm.BlogId" />
+
+                <div>
+                    <label for="title">Title:</label>
+                    <InputText id="title" class="form-control" @bind-Value="@blogPostCreateForm.Title" />
+                    <ValidationMessage class="text-danger" For="@(() => blogPostCreateForm.Title)"></ValidationMessage>
+                </div>
+                <div>
+                    <label for="content">Blog Post:</label>
+                    <InputTextArea rows="10" id="content" class="form-control" @bind-Value="blogPostCreateForm.Content"></InputTextArea>
+                    <ValidationMessage class="text-danger" For="@(() => blogPostCreateForm.Content)"></ValidationMessage>
+                </div>
+                <div class="d-flex justify-content-between m-3">
+                    <button type="button" class="btn btn-secondary" @onclick="GoBack">Go Back</button>
+                    <input type="submit" class="btn btn-primary" value="Make Post"/>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string BlogId { get; set; }
+    private bool getError;
+    private bool shouldRender;
+    [SupplyParameterFromForm]
+    public BlogPostCreateForm blogPostCreateForm { get; set; }
+
+    private async Task CreateBlogPost()
+    {
+        var response = await HttpHelper.PostAsync("https://localhost:7078/BlogPost", blogPostCreateForm);
+
+        getError = !response.IsSuccess;
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo($"/Blog/{BlogId}");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        shouldRender = true;
+        // "Null-coalescing assignment operator": returns the left hand existing variable unless it is null,
+        // in which case it it evaluates and returns the right hand result.
+        blogPostCreateForm ??= new()
+        {
+            BlogId = int.Parse(BlogId),
+        };
+    }
+}

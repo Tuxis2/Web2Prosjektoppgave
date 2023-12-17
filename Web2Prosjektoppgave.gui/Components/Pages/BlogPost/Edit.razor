@@ -1,0 +1,135 @@
+﻿@page "/Blog/{BlogId}/BlogPost/{blogPostId}/Edit"
+@using System.Text.Json
+@using System.Text
+@using Microsoft.AspNetCore.Components
+@using Web2Prosjektoppgave.shared.ViewModels.BlogPost
+
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit Blog Post</PageTitle>
+<h1 class="text-center">Edit Blog Post</h1>
+
+<div class="container">
+    <EditForm FormName="createPost" Model="@blogPostEditForm" OnValidSubmit="@CreateBlogPost">
+        <DataAnnotationsValidator />
+        <div class="col-md-10">
+            <input id="PostId" type="hidden" @bind="blogPostEditForm.Id" />
+            <input id="BlogId" type="hidden" @bind="blogPostEditForm.BlogId" />
+
+            <div>
+                <label for="title">Title:</label>
+                <InputText id="title" class="form-control" @bind-Value="@blogPostEditForm.Title" />
+                <ValidationMessage class="text-danger" For="@(() => blogPostEditForm.Title)"></ValidationMessage>
+            </div>
+            <div>
+                <label for="content">Blog Post:</label>
+                <InputTextArea rows="10" id="content" class="form-control" @bind-Value="blogPostEditForm.Content"></InputTextArea>
+                <ValidationMessage class="text-danger" For="@(() => blogPostEditForm.Content)"></ValidationMessage>
+            </div>
+            <div class="d-flex justify-content-between m-3">
+                <button type="button" class="btn btn-secondary" @onclick="GoBack">Go Back</button>
+                <input type="submit" class="btn btn-primary" value="Edit Post"/>
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public string BlogId { get; set; }
+    [Parameter]
+    public string BlogPostId { get; set; }
+    private bool getError;
+    private bool shouldRender;
+    [SupplyParameterFromForm]
+    public BlogPostEditForm blogPostEditForm { get; set; }
+
+    protected override bool ShouldRender() => shouldRender;
+
+    private async Task CreateBlogPost()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put,
+            "https://localhost:7078/BlogPost");
+        request.Headers.Add("Accept", "application/vnd.github.v3+json");
+        request.Headers.Add("User-Agent", "HttpClientFactory-Sample");
+
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(blogPostEditForm), Encoding.UTF8, "application/json");
+
+        var client = ClientFactory.CreateClient();
+
+        var response = await client.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var options = new JsonSerializerOptions()
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+        }
+        else
+        {
+            getError = true;
+        }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/Blog");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // "Null-coalescing assignment operator": returns the left hand existing variable unless it is null,
+        // in which case it it evaluates and returns the right hand result.
+        blogPostEditForm ??= new();
+
+        BlogPostItemView? blogPost = await GetBlogPost();
+
+        blogPostEditForm = new BlogPostEditForm()
+        {
+            Id = int.Parse(BlogPostId),
+            BlogId = int.Parse(BlogId),
+            Title = blogPost.Title,
+            Content = blogPost.Content,
+        };
+
+        shouldRender = true;
+    }
+
+    private async Task<BlogPostItemView?> GetBlogPost()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get,
+            $"https://localhost:7078/BlogPost/{BlogPostId}");
+        request.Headers.Add("Accept", "application/vnd.github.v3+json");
+        request.Headers.Add("User-Agent", "HttpClientFactory-Sample");
+
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(blogPostEditForm), Encoding.UTF8, "application/json");
+
+        var client = ClientFactory.CreateClient();
+        var response = await client.SendAsync(request);
+
+        BlogPostItemView? blogPost = null;
+        if (response.IsSuccessStatusCode)
+        {
+            var options = new JsonSerializerOptions()
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+            blogPost = await JsonSerializer.DeserializeAsync
+                <BlogPostItemView>(responseStream, options);
+        }
+        else
+        {
+            getError = true;
+        }
+
+        return blogPost;
+    }
+}

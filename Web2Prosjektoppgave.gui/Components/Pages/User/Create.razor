@@ -1,0 +1,66 @@
+﻿@page "/User/Create"
+@using Microsoft.AspNetCore.Components
+@using Web2Prosjektoppgave.shared.ViewModels.User
+@rendermode InteractiveServer
+
+@inject Services.HttpHelper HttpHelper
+@inject NavigationManager NavigationManager
+
+<PageTitle>New User</PageTitle>
+<h1 class="text-center">Register a new user</h1>
+
+<div class="container">
+    <EditForm FormName="createUser" Model="@userCreateForm" OnValidSubmit="@CreateUser">
+        <DataAnnotationsValidator />
+        <div class="col-md-10">
+            <div>
+                <label for="userName">Choose a User Name:</label>
+                <InputText id="userName" class="form-control" @bind-Value="userCreateForm.UserName" />
+                <ValidationMessage class="text-danger" For="@(() => userCreateForm.UserName)"></ValidationMessage>
+            </div>
+            <div>
+                <label for="email">Email (can log on with this as well):</label>
+                <InputText id="email" class="form-control" @bind-Value="userCreateForm.Email"></InputText>
+                <ValidationMessage class="text-danger" For="@(() => userCreateForm.Email)"></ValidationMessage>
+            </div>
+            <div>
+                <label for="password">Password:</label>
+                <InputText id="password" class="form-control" @bind-Value="userCreateForm.Password"></InputText>
+                <ValidationMessage class="text-danger" For="@(() => userCreateForm.Password)"></ValidationMessage>
+            </div>
+            <div class="d-flex justify-content-between m-3">
+                <button type="button" class="btn btn-secondary" @onclick="GoBack">Go Back</button>
+                <input type="submit" class="btn btn-primary" value="Create user" />
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private bool getError;
+    private bool shouldRender;
+    [SupplyParameterFromForm]
+    public UserCreateForm userCreateForm { get; set; }
+
+    protected override bool ShouldRender() => shouldRender;
+
+    private async Task CreateUser()
+    {
+        var response = await HttpHelper.PostAsync("https://localhost:7078/User", userCreateForm);
+
+        getError = !response.IsSuccess;
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/Blog");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        shouldRender = true;
+        // "Null-coalescing assignment operator": returns the left hand existing variable unless it is null,
+        // in which case it it evaluates and returns the right hand result.
+        userCreateForm ??= new();
+    }
+}

@@ -1,0 +1,153 @@
+﻿@page "/Blog/{BlogId}/BlogPost/{BlogPostId}/Comment/Create"
+@rendermode InteractiveServer
+@using System.Text.Json
+@using System.Text
+@using Microsoft.AspNetCore.Components
+@using Web2Prosjektoppgave.shared.ViewModels.BlogPost
+@using Web2Prosjektoppgave.shared.ViewModels.Comment
+
+@inject Services.HttpHelper HttpHelper
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Comment</PageTitle>
+<h3 class="text-center">Make a comment</h3>
+
+<div class="container">
+
+    <div class="card">
+        <h4 class="text-center flex-grow-1">@commentCreateForm?.BlogPost?.Title</h4>
+        <p class="text-end m-4">@commentCreateForm?.BlogPost?.Content</p>
+        @if (@commentCreateForm?.BlogPost?.CreatedAt != @commentCreateForm?.BlogPost?.ModifiedAt)
+        {
+            <div class="text-end m-2">
+                <p class="m-0">Created by(edited): @commentCreateForm?.BlogPost?.CreatedByUserName on @commentCreateForm?.BlogPost?.CreatedAt.ToString("dd/MM/yyyy")</p>
+                <p class="m-0">Last edit on @commentCreateForm?.BlogPost?.ModifiedAt.ToString("dd/MM/yyyy") by @commentCreateForm?.BlogPost?.ModifiedByUserName</p>
+            </div>
+        }
+        else
+        {
+            <p class="text-end m-2">Posted by: @commentCreateForm?.BlogPost?.CreatedByUserName on @commentCreateForm?.BlogPost?.CreatedAt.ToString("dd/MM/yyyy")</p>
+        }
+    </div>
+    <EditForm FormName="createPostComment" Model="@commentCreateForm" OnValidSubmit="@CreatePostComment">
+        <DataAnnotationsValidator/>
+        <div class="card">
+            <input id="BlogId" type="hidden" @bind="commentCreateForm.BlogId" />
+            <input id="PostId" type="hidden" @bind="commentCreateForm.BlogPostId" />
+
+            <div>
+                <label for="content">Blog Post:</label>
+                <InputTextArea rows="10" id="content" class="form-control" @bind-Value="@commentCreateForm.Content"/>
+                <ValidationMessage class="text-danger" For="@((() => commentCreateForm.Content))"></ValidationMessage>
+            </div>
+            <div class="d-flex justify-content-between m-3">
+                <button type="button" class="btn btn-secondary" @onclick="GoBack">Go Back</button>
+                <button type="submit" class="btn btn-primary">Make Comment</button>
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public string BlogId { get; set; }
+    [Parameter]
+    public string BlogPostId { get; set; }
+    private bool getError;
+    private bool shouldRender;
+    [SupplyParameterFromForm]
+    public CommentCreateForm commentCreateForm { get; set; }
+
+    protected override bool ShouldRender() => shouldRender;
+
+    private async Task CreatePostComment()
+    {
+        // var request = new HttpRequestMessage(HttpMethod.Post,
+        //     "https://localhost:7078/Comment");
+        // request.Headers.Add("Accept", "application/vnd.github.v3+json");
+        // request.Headers.Add("User-Agent", "HttpClientFactory-Sample");
+
+        // request.Content = new StringContent(
+        //     JsonSerializer.Serialize(commentCreateForm), Encoding.UTF8, "application/json");
+
+        // var client = ClientFactory.CreateClient();
+
+        // var response = await client.SendAsync(request);
+
+        // if (response.IsSuccessStatusCode)
+        // {
+        //     var options = new JsonSerializerOptions()
+        //     {
+        //         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        //     };
+
+        //     using var responseStream = await response.Content.ReadAsStreamAsync();
+        // }
+        // else
+        // {
+        //     getError = true;
+        // }
+
+        var response = await HttpHelper.PostAsync("https://localhost:7078/Comment", commentCreateForm);
+
+        getError = !response.IsSuccess;
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo($"/Blog/{BlogId}");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        commentCreateForm = new CommentCreateForm()
+        {
+            BlogPost = new BlogPostItemView()
+        };
+
+        BlogPostItemView? blogPost = await GetBlogPost();
+
+        commentCreateForm = new CommentCreateForm()
+        {
+            BlogId = int.Parse(BlogId),
+            BlogPostId = int.Parse(BlogPostId),
+            BlogPost = blogPost
+        };
+
+        shouldRender = true;
+    }
+
+    private async Task<BlogPostItemView?> GetBlogPost()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get,
+            $"https://localhost:7078/BlogPost/{BlogPostId}");
+        request.Headers.Add("Accept", "application/vnd.github.v3+json");
+        request.Headers.Add("User-Agent", "HttpClientFactory-Sample");
+
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(commentCreateForm), Encoding.UTF8, "application/json");
+
+        var client = ClientFactory.CreateClient();
+        var response = await client.SendAsync(request);
+
+        BlogPostItemView? blogPost = null;
+        if (response.IsSuccessStatusCode)
+        {
+            var options = new JsonSerializerOptions()
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+            blogPost = await JsonSerializer.DeserializeAsync
+                <BlogPostItemView>(responseStream, options);
+        }
+        else
+        {
+            getError = true;
+        }
+
+        return blogPost;
+    }
+}

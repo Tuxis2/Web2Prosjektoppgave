@@ -1,0 +1,84 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using System.Text.Json
+@using Web2Prosjektoppgave.shared.ViewModels.Blog
+
+@inject Services.HttpHelper HttpHelper
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Home Page</PageTitle>
+
+<div class="container mt-4 text-center">
+    <div>
+        <h1 class="display-4">Welcome to BlogWorld</h1>
+        <p class="lead">
+            Start exploring the thoughts and ideas from our community contributors, or perhaps share you want to share some of your own?
+            You can do everything from creating your own blogs to commenting on other community members blog posts.'
+        </p>
+    </div>
+    
+
+    <div class="row">
+        <div class="col-md-10">
+            <strong class="mb-4">Recently created Blogs</strong>
+            @foreach (var blog in blogs)
+            {
+                <div class="col-md-12 m-1">
+                    <div class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">@blog.Title</h2>
+                            <p class="card-text">@blog.Description</p>
+                            <p class="card-text">Created by: @blog.CreatedByUserName</p>
+                            <p class="card-text">Created on: @blog.CreatedAt</p>
+                            <button class="btn btn-primary" @onclick="() => GoToBlog(blog.Id)">Go to Blog</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="col-md-2">
+            <p>
+                <Strong>Create your own blog</Strong>
+            </p>
+            <p>
+                <button class="btn btn-primary" @onclick="GoToCreateBlog">Get your blog on</button>
+            </p>
+        </div>
+    </div>
+    <p class="text-end">Learn more about <a href="https://en.wikipedia.org/wiki/Blog">blogs</a>.</p>
+</div>
+
+@code {
+    private IEnumerable<BlogItemView>? blogs = Array.Empty<BlogItemView>();
+    private bool getError;
+    private bool shouldRender;
+
+    protected override bool ShouldRender() => shouldRender;
+
+    private void GoToBlog(int blogId)
+    {
+        NavigationManager.NavigateTo($"/Blog/{blogId}");
+    }
+
+    private void GoToCreateBlog()
+    {
+        NavigationManager.NavigateTo($"/Blog/Create");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        blogs = await GetBlogs();
+
+        shouldRender = true;
+    }
+
+    private async Task<IEnumerable<BlogItemView>?>  GetBlogs()
+    {
+        var response = await HttpHelper.GetAsync<IEnumerable<BlogItemView>>("https://localhost:7078/Blog/Recent");
+
+        getError = !response.IsSuccess;
+
+        return response.Result;
+    }
+}

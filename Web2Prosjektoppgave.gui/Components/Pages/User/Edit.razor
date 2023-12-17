@@ -1,0 +1,61 @@
+﻿@page "/User/Edit"
+@using Microsoft.AspNetCore.Components
+@using Web2Prosjektoppgave.shared.ViewModels.User
+@rendermode InteractiveServer
+
+@inject Services.HttpHelper HttpHelper
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit User Info</PageTitle>
+<h3>Edit User information</h3>
+
+<div class="container">
+    <EditForm FormName="createUser" Model="@userEditForm" OnValidSubmit="@EditUser">
+        <DataAnnotationsValidator />
+        <div class="col-md-10">
+            <div>
+                <label for="userName">Change User Name:</label>
+                <InputText id="userName" class="form-control" @bind-Value="userEditForm.UserName" />
+                <ValidationMessage class="text-danger" For="@(() => userEditForm.UserName)"></ValidationMessage>
+            </div>
+            <div>
+                <label for="email">Change Email (can log on with this as well):</label>
+                <InputText id="email" class="form-control" @bind-Value="userEditForm.Email"></InputText>
+                <ValidationMessage class="text-danger" For="@(() => userEditForm.Email)"></ValidationMessage>
+            </div>
+            <div class="d-flex justify-content-between m-3">
+                <button type="button" class="btn btn-secondary" @onclick="GoBack">Go Back</button>
+                <input type="submit" class="btn btn-primary" value="Create user" />
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private bool getError;
+    private bool shouldRender;
+    [SupplyParameterFromForm]
+    public UserEditForm userEditForm { get; set; }
+
+    protected override bool ShouldRender() => shouldRender;
+
+    private async Task EditUser()
+    {
+        var response = await HttpHelper.PutAsync("https://localhost:7078/User", userEditForm);
+
+        getError = !response.IsSuccess;
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/Blog");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        shouldRender = true;
+        // "Null-coalescing assignment operator": returns the left hand existing variable unless it is null,
+        // in which case it it evaluates and returns the right hand result.
+        userEditForm ??= new();
+    }
+}

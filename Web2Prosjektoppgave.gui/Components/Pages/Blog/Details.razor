@@ -1,0 +1,216 @@
+﻿@page "/Blog/{BlogId}"
+@rendermode InteractiveServer
+
+@using System.Text.Json
+@using Microsoft.AspNetCore.SignalR.Client
+@using Web2Prosjektoppgave.shared.ViewModels.Blog
+@using Web2Prosjektoppgave.shared.ViewModels.BlogPost
+@using Web2Prosjektoppgave.shared.ViewModels.Comment
+
+@inject Services.HttpHelper HttpHelper
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>@blog.Title</PageTitle>
+<h3>@blog.Title</h3>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-10">
+            @foreach (var blogPost in blog.BlogPosts)
+            {
+                <div class="border border-2 border-dark rounded mt-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="card-title text-center flex-grow-1">@blogPost.Title</h4>
+                        @* @if (User.Identity.IsAuthenticated && User.Identity.Name == Model.CreatedByUserName)
+                        {
+                            <div>
+                                <a class="m-1" asp-controller="Post" asp-action="Edit" asp-route-postId="@post.Id">Edit</a>
+                                <a class="m-1" asp-controller="Post" asp-action="Delete" asp-route-postId="@post.Id">Delete</a>
+                            </div>
+                        } *@
+
+                    </div>
+                    <p class="card-text lead m-4">@blogPost.Content</p>
+                    @if (blogPost.CreatedAt != blogPost.ModifiedAt)
+                    {
+                        <div class="card-text text-end m-2">
+                            <p class="m-0">Created by(edited): @blogPost.CreatedByUserName on @blogPost.CreatedAt.ToString("dd/MM/yyyy")</p>
+                            <p class="m-0">Last edit on @blogPost.ModifiedAt.ToString("dd/MM/yyyy") by @blogPost.ModifiedByUserName</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="card-text text-end m-2">Created by: @blogPost.CreatedByUserName on @blogPost.CreatedAt.ToString("dd/MM/yyyy")</p>
+                    }
+
+                    <div id="commentSection_@blogPost.Id" class="d-flex justify-content-end">
+                        <button type="button" id="comment" class="btn btn-primary" @onclick="@(() => GoToCreateComment(blogPost.Id))">Comment</button>
+                    </div>
+                </div>
+                <div class="card bg-black">
+                    @foreach (var comment in blogPost.BlogComments)
+                    {
+                        <div class="card border-dark">
+                            <p class="text-end m-4">@comment.Content</p>
+                            @if (@comment.CreatedAt != @comment.ModifiedAt)
+                            {
+                                <div class="text-end m-2">
+                                    <p class="m-0">Posted by(edited): @comment.CreatedByUserName on @comment.CreatedAt.ToString("dd/MM/yyyy")</p>
+                                    <p class="m-0">Last edit on @comment.ModifiedAt.ToString("dd/MM/yyyy") by @comment.ModifiedByUserName</p>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-end m-2">Posted by: @comment.CreatedByUserName on @comment.CreatedAt.ToString("dd/MM/yyyy")</p>
+                            }
+                            @*  @if (User.Identity.IsAuthenticated && User.Identity.Name == comment.CreatedByUserName)
+                            {
+                                <div class="d-flex justify-content-end align-items-center">
+                                    <a class="m-1" asp-controller="Comment" asp-action="Edit" asp-route-commentId="@comment.Id">Edit</a>
+                                    <a class="m-1" asp-controller="Comment" asp-action="Delete" asp-route-commentId="@comment.Id">Delete</a>
+                                </div>
+                            } *@
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        <div class="col-md-2">
+            @* @if (User.Identity.IsAuthenticated && User.Identity.Name == Model.CreatedByUserName)
+            { *@
+                <p>
+                    <Strong>Make a new post</Strong>
+                </p>
+                <p>
+                    <button type="button" class="btn btn-primary" @onclick="GoToCreateBlogPost">Post to Blog</button>
+                </p>
+            @* } *@
+
+            <label class="fw-bold">Description:</label>
+            <p class="card-text">@blog.Description</p>
+            <label class="fw-bold">Created by:</label>
+            <p class="card-text">@blog.CreatedByUserName</p>
+            <label class="fw-bold">Created:</label>
+            <p class="card-text">@blog.CreatedAt.ToString("dd/MM/yyyy")</p>
+            <label class="fw-bold">Modified by:</label>
+            <p class="card-text">@blog.ModifiedByUserName</p>
+            <label class="fw-bold">Modified:</label>
+            <p class="card-text">@blog.ModifiedAt.ToString("dd/MM/yyyy")</p>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string BlogId { get; set; }
+    private BlogDetailView? blog = new BlogDetailView()
+    {
+        BlogPosts = new List<BlogPostItemView>()
+    };
+
+    private HubConnection? hubConnection;
+    private bool getError;
+    private bool shouldRender;
+
+    protected override bool ShouldRender() => shouldRender;
+
+    private void GoToCreateBlogPost()
+    {
+        NavigationManager.NavigateTo($"/Blog/{BlogId}/BlogPost/Create");
+    }
+
+    private void GoToEditBlogPost(int blogPostId)
+    {
+        NavigationManager.NavigateTo($"/Blog/{BlogId}/BlogPost/{blogPostId}/Edit");
+    }
+
+    private void GoToCreateComment(int blogPostId)
+    {
+        NavigationManager.NavigateTo($"/Blog/{BlogId}/BlogPost/{blogPostId}/Comment/Create");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        blog = await GetBlog();
+
+        shouldRender = true;
+
+        await InitHubConnection();
+    }
+
+    private async Task<BlogDetailView?> GetBlog()
+    {
+        var response = await HttpHelper.GetAsync<BlogDetailView>($"https://localhost:7078/Blog/{BlogId}");
+
+        getError = !response.IsSuccess;
+
+        return response.Result;
+    }
+
+    private async Task InitHubConnection()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl("https://localhost:7078/SignalHub")
+            .Build();
+
+        hubConnection.On<string, CommentItemSignal>("SendBlogPost", (user, signal) =>
+        {
+            HandleCommentSignal(user, signal);
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private void HandleCommentSignal(string user, CommentItemSignal signal)
+    {
+        var blogPost = blog?.BlogPosts.FirstOrDefault((post) => post.Id == signal.BlogPostId);
+        var comment = blogPost?.BlogComments.FirstOrDefault((comment) => comment.Id == signal.Id);
+
+        if (blogPost != null)
+        {
+            if (comment != null)
+            {
+                UpdatesExistingComment(comment, signal);
+            }
+            else
+            {
+                AddsNewComment(blogPost, signal);
+            }
+        }
+        else
+        {
+            Console.WriteLine("Blog post not found.");
+        }
+    }
+
+    private void UpdatesExistingComment(CommentItemView comment, CommentItemSignal signal)
+    {
+        comment.ModifiedAt = signal.ModifiedAt;
+        comment.ModifiedByUserName = signal.ModifiedByUserName;
+        comment.Content = signal.Content;
+    }
+
+    private void AddsNewComment(BlogPostItemView blogPost, CommentItemSignal signal)
+    {
+        blogPost.BlogComments.Add(new CommentItemView()
+        {
+            Id = signal.Id,
+
+            CreatedAt = signal.CreatedAt,
+            CreatedByUserName = signal.CreatedByUserName,
+            ModifiedAt = signal.ModifiedAt,
+            ModifiedByUserName = signal.ModifiedByUserName,
+            Content = signal.Content
+        });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
