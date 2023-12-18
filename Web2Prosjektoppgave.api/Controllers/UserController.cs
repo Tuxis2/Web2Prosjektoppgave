@@ -1,10 +1,8 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Web2Prosjektoppgave.api.Models.Entities;
 using Web2Prosjektoppgave.api.Models.Interfaces;
 using Web2Prosjektoppgave.api.Utilities;
-using Web2Prosjektoppgave.shared.ViewModels.Comment;
 using Web2Prosjektoppgave.shared.ViewModels.User;
 
 namespace Web2Prosjektoppgave.api.Controllers

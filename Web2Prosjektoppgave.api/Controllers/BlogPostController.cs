@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection.Metadata;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 using Web2Prosjektoppgave.api.Models.Entities;
@@ -239,7 +240,20 @@ namespace Web2Prosjektoppgave.api.Controllers
         [Route("Search")]
         public async Task<IActionResult> Search(string phrase)
         {
-            _blogPostRepository
+            var blogPosts = await _blogPostRepository.Search(phrase);
+            var blogIdList = new List<int>();
+
+            foreach (var blogpost in blogPosts)
+            {
+                blogIdList.Add(blogpost.BlogId);
+            }
+
+            var searchedBlogIds = new BlogPostSearch()
+            {
+                BlogIds = blogIdList
+            };
+
+            return Ok(searchedBlogIds);
         }
     }
 }

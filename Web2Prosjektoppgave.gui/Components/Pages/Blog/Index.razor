@@ -1,7 +1,7 @@
 ﻿@page "/Blog"
 @rendermode InteractiveServer
-@using System.Text.Json
 @using Web2Prosjektoppgave.shared.ViewModels.Blog
+@using Web2Prosjektoppgave.shared.ViewModels.BlogPost
 
 @inject Services.HttpHelper HttpHelper
 @inject IHttpClientFactory ClientFactory
@@ -11,11 +11,14 @@
 <h3>Blog hub</h3>
 
 <div class="container mt-4 text-center">
-
     <div class="row">
         <div class="col-md-10">
+            <div class="bg-dark text-white m-2 p-2">
+                <pre>Search users and tags: @searchString</pre>
+                <input class="form-control" type="text" @bind="searchString" @bind:event="oninput" @bind:after="UpdateSearch" />
+            </div>
+
             <div class="row">
-                <strong class="mb-4">All blogs</strong>
                 @foreach (var blog in blogs)
                 {
                     <div class="col-md-6 mb-2">
@@ -45,6 +48,7 @@
 
 @code {
     private IEnumerable<BlogItemView>? blogs = Array.Empty<BlogItemView>();
+    private string? searchString;
     private bool getError;
     private bool shouldRender;
 
@@ -74,5 +78,21 @@
         getError = !response.IsSuccess;
 
         return response.Result;
+    }
+
+    private async void UpdateSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchString) || searchString.Length < 3)
+        {
+            return;
+        }
+
+        var response = await HttpHelper.GetAsync<BlogPostSearch>("https://localhost:7078/BlogPost/Search");
+
+        getError = !response.IsSuccess;
+
+        var searchResult = response.Result;
+
+        blogs = blogs.Where(blog => searchResult.BlogIds.Contains(blog.Id)).ToList();
     }
 }
