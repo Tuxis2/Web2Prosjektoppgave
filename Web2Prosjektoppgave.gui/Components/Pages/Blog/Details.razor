@@ -5,6 +5,7 @@
 @using Web2Prosjektoppgave.shared.ViewModels.Blog
 @using Web2Prosjektoppgave.shared.ViewModels.BlogPost
 @using Web2Prosjektoppgave.shared.ViewModels.Comment
+@using System.Web
 
 @inject Services.HttpHelper HttpHelper
 @inject IHttpClientFactory ClientFactory
@@ -16,6 +17,11 @@
 <div class="container">
     <div class="row">
         <div class="col-md-10">
+            <div class="bg-dark text-white m-2 p-2">
+                <pre>Search users and tags: @searchString</pre>
+                <input class="form-control" type="text" @bind="searchString" @bind:event="oninput" @bind:after="UpdateSearch" />
+            </div>
+
             @foreach (var blogPost in blog.BlogPosts)
             {
                 <div class="border border-2 border-dark rounded mt-4">
@@ -109,6 +115,7 @@
     };
 
     private HubConnection? hubConnection;
+    private string? searchString;
     private bool getError;
     private bool shouldRender;
 
@@ -211,5 +218,19 @@
         {
             await hubConnection.DisposeAsync();
         }
+    }
+
+    private async void UpdateSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchString) || searchString.Length < 3)
+        {
+            return;
+        }
+
+        var response = await HttpHelper.GetAsync<IList<BlogPostItemView>>($"https://localhost:7078/BlogPost/Search/{BlogId}?Phrase={HttpUtility.UrlEncode(searchString)}");
+        var searchResult = response.Result;
+        getError = !response.IsSuccess;
+
+        blog.BlogPosts = searchResult;
     }
 }

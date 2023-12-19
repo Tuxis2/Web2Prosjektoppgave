@@ -1,6 +1,7 @@
 ﻿@page "/"
 @rendermode InteractiveServer
 @using System.Text.Json
+@using Web2Prosjektoppgave.gui.Components.Layout
 @using Web2Prosjektoppgave.shared.ViewModels.Blog
 
 @inject Services.HttpHelper HttpHelper
@@ -53,6 +54,8 @@
     private IEnumerable<BlogItemView>? blogs = Array.Empty<BlogItemView>();
     private bool getError;
     private bool shouldRender;
+    [CascadingParameter]
+    public MainLayout Layout { get; set; }
 
     protected override bool ShouldRender() => shouldRender;
 
@@ -71,6 +74,14 @@
         blogs = await GetBlogs();
 
         shouldRender = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Layout != null)
+        {
+            await Layout.RefreshAuth();
+        }
     }
 
     private async Task<IEnumerable<BlogItemView>?>  GetBlogs()

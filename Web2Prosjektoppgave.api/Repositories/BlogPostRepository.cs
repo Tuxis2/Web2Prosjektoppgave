@@ -58,12 +58,15 @@ public class BlogPostRepository : IBlogPostRepository
             .ToListAsync();
     }
 
-    public async Task<IList<BlogPost>> Search(string phrase)
+    public async Task<IList<BlogPost>> Search(string phrase, int blogId)
     {
         return await _dbContext.BlogPosts
             .Include(blogPost => blogPost.CreatedBy)
             .Include(blogPost => blogPost.ModifiedBy)
-            .Where(blogPost => blogPost.BlogPostTags.Any(tag => tag.Name == phrase) || blogPost.CreatedBy.UserName.Contains(phrase))
+            .Where(blogPost => 
+                (blogPost.BlogId == blogId) &&
+                (blogPost.BlogPostTags.Any(tag => tag.Name.Contains(phrase)) || blogPost.CreatedBy.UserName.Contains(phrase))
+                )
             .ToListAsync();
     }
 }

@@ -113,10 +113,10 @@ namespace Web2Prosjektoppgave.api.Controllers
         }
 
         // Helper functions
-        private bool UserPropertiesDiffer(User existingUser, UserEditForm userForm)
-        {
-            return existingUser.UserName != userForm.UserName || existingUser.Email != userForm.Email;
-        }
+        //private bool UserPropertiesDiffer(User existingUser, UserEditForm userForm)
+        //{
+        //    return existingUser.UserName != userForm.UserName || existingUser.Email != userForm.Email;
+        //}
     }
 
     

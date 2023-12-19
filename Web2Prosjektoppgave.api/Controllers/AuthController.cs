@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Web2Prosjektoppgave.api.Models.Entities;
 using Web2Prosjektoppgave.api.Models.Interfaces;
 using Web2Prosjektoppgave.api.Utilities;
+using Web2Prosjektoppgave.shared.Security;
 using Web2Prosjektoppgave.shared.ViewModels.Login;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
@@ -38,7 +39,11 @@ namespace Web2Prosjektoppgave.api.Controllers
             {
                 var tokenString = CreateJWT(authenticationResult.user);
 
-                return Ok(new { TokenString = tokenString });
+                return Ok(new Token()
+                {
+                    TokenString = tokenString,
+                    UserName = model.UserName,
+                });
             }
 
             return Unauthorized();
@@ -68,9 +73,6 @@ namespace Web2Prosjektoppgave.api.Controllers
         private string CreateJWT(User user)
 
         {
-            var secretKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes("SECRET-KEY-MUST-BE-AT-LEAST-128-BITS-LONG"));
-            var credentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
-
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Name, user.UserName),
@@ -78,17 +80,7 @@ namespace Web2Prosjektoppgave.api.Controllers
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
             };
 
-            var securityToken = new JwtSecurityToken(
-                issuer: "https://localhost:7238/",
-                audience: "https://localhost:7238/",
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(60),
-                signingCredentials: credentials
-            );
-
-            var securityTokenHandler = new JwtSecurityTokenHandler();
-
-            return securityTokenHandler.WriteToken(securityToken);
+            return JwtTokenHelper.CreateJWT(claims);
         }
     }
 }

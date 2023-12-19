@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Components.Authorization;
 using Web2Prosjektoppgave.gui.Components;
+using Web2Prosjektoppgave.gui.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +10,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<Web2Prosjektoppgave.gui.Services.HttpHelper>();
+builder.Services.AddScoped<AuthenticationStateProvider, AuthStateProvider>();
 
 var app = builder.Build();
 

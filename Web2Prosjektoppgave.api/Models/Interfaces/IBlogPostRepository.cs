@@ -10,5 +10,5 @@ public interface IBlogPostRepository
     Task Delete(BlogPost blogPost);
     Task<IList<BlogPost>> GetAllByBlogId(int blogId);
     Task<IList<BlogPost>> GetAllByUserId(int userId);
-    Task<IList<BlogPost>> Search(string phrase);
+    Task<IList<BlogPost>> Search(string phrase, int blogId);
 }

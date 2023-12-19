@@ -63,35 +63,14 @@
 
     private async Task CreatePostComment()
     {
-        // var request = new HttpRequestMessage(HttpMethod.Post,
-        //     "https://localhost:7078/Comment");
-        // request.Headers.Add("Accept", "application/vnd.github.v3+json");
-        // request.Headers.Add("User-Agent", "HttpClientFactory-Sample");
-
-        // request.Content = new StringContent(
-        //     JsonSerializer.Serialize(commentCreateForm), Encoding.UTF8, "application/json");
-
-        // var client = ClientFactory.CreateClient();
-
-        // var response = await client.SendAsync(request);
-
-        // if (response.IsSuccessStatusCode)
-        // {
-        //     var options = new JsonSerializerOptions()
-        //     {
-        //         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        //     };
-
-        //     using var responseStream = await response.Content.ReadAsStreamAsync();
-        // }
-        // else
-        // {
-        //     getError = true;
-        // }
-
         var response = await HttpHelper.PostAsync("https://localhost:7078/Comment", commentCreateForm);
 
         getError = !response.IsSuccess;
+
+        if (response.IsSuccess)
+        {
+            GoBack();
+        }
     }
 
     private void GoBack()

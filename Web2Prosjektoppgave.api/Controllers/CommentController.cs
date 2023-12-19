@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using Web2Prosjektoppgave.api.Hubs;
 using Web2Prosjektoppgave.api.Models.Entities;
 using Web2Prosjektoppgave.api.Models.Interfaces;
+using Web2Prosjektoppgave.api.Security;
 using Web2Prosjektoppgave.shared.ViewModels.BlogPost;
 using Web2Prosjektoppgave.shared.ViewModels.Comment;
 
@@ -63,22 +64,11 @@ namespace Web2Prosjektoppgave.api.Controllers
 
             var commentModel = new Comment()
             {
-                //CreatedById = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value),
-                //ModifiedById = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value),
-                CreatedById = 1,
-                ModifiedById = 1,
+                CreatedById = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value),
+                ModifiedById = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value),
                 Content = comment.Content,
                 BlogPostId = comment.BlogPostId,
             };
-
-            //var requirement = new UserRequirement(commentModel.CreatedById);
-            //// Check if the current user has the same ID as the one being requested
-            //var authorizationResult = await _authorizationService.AuthorizeAsync(User, null, requirement);
-
-            //if (!authorizationResult.Succeeded)
-            //{
-            //    return new ForbidResult();
-            //}
 
             await _repository.Insert(commentModel);
 
@@ -141,14 +131,14 @@ namespace Web2Prosjektoppgave.api.Controllers
                 return NotFound();
             }
 
-            //var requirement = new UserRequirement(updateComment.CreatedById);
-            //// Check if the current user has the same ID as the one being requested
-            //var authorizationResult = await _authorizationService.AuthorizeAsync(User, null, requirement);
+            var requirement = new UserRequirement(updateComment.CreatedById);
+            // Check if the current user has the same ID as the one being requested
+            var authorizationResult = await _authorizationService.AuthorizeAsync(User, null, requirement);
 
-            //if (!authorizationResult.Succeeded)
-            //{
-            //    return new ForbidResult();
-            //}
+            if (!authorizationResult.Succeeded)
+            {
+                return new ForbidResult();
+            }
 
             if (updateComment.Content != comment.Content)
             {
@@ -191,14 +181,14 @@ namespace Web2Prosjektoppgave.api.Controllers
                 return NotFound();
             }
 
-            //var requirement = new UserRequirement(comment.CreatedById);
-            //// Check if the current user has the same ID as the one being requested
-            //var authorizationResult = await _authorizationService.AuthorizeAsync(User, null, requirement);
+            var requirement = new UserRequirement(comment.CreatedById);
+            // Check if the current user has the same ID as the one being requested
+            var authorizationResult = await _authorizationService.AuthorizeAsync(User, null, requirement);
 
-            //if (!authorizationResult.Succeeded)
-            //{
-            //    return new ForbidResult();
-            //}
+            if (!authorizationResult.Succeeded)
+            {
+                return new ForbidResult();
+            }
 
             await _repository.Delete(comment);
 

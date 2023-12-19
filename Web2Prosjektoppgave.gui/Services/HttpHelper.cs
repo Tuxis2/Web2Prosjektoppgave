@@ -2,6 +2,7 @@
 using Microsoft.JSInterop;
 using System.Text;
 using System.Text.Json;
+using Web2Prosjektoppgave.shared.Security;
 using Web2Prosjektoppgave.shared.ViewModels.Blog;
 
 namespace Web2Prosjektoppgave.gui.Services;
@@ -22,6 +23,7 @@ public class HttpHelper
         var request = new HttpRequestMessage(HttpMethod.Post, uri);
         request.Headers.Add("Accept", "application/vnd.github.v3+json");
         request.Headers.Add("User-Agent", "HttpClientFactory-Sample");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", (await GetJWT()).TokenString);
         request.Content = new StringContent(JsonSerializer.Serialize(formObject), Encoding.UTF8, "application/json");
 
         var client = _clientFactory.CreateClient();
@@ -46,6 +48,7 @@ public class HttpHelper
         var request = new HttpRequestMessage(HttpMethod.Put, uri);
         request.Headers.Add("Accept", "application/vnd.github.v3+json");
         request.Headers.Add("User-Agent", "HttpClientFactory-Sample");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", (await GetJWT()).TokenString);
         request.Content = new StringContent(JsonSerializer.Serialize(formObject), Encoding.UTF8, "application/json");
 
         var client = _clientFactory.CreateClient();
@@ -103,10 +106,17 @@ public class HttpHelper
 
 
     // Helpers
-    private async Task<string> GetJWT()
+    private async Task<Token> GetJWT()
     {
-        return await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken")
+        var json = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken")
             .ConfigureAwait(false);
+
+        var options = new JsonSerializerOptions()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
+        return JsonSerializer.Deserialize<Token>(json, options);
     }
 
     public class ResponseEmpty

@@ -46,6 +46,11 @@
         var response = await HttpHelper.PostAsync("https://localhost:7078/Blog", blogCreateForm);
 
         getError = !response.IsSuccess;
+
+        if (response.IsSuccess)
+        {
+            NavigationManager.NavigateTo("/Blog");
+        }
     }
 
     private void GoBack()

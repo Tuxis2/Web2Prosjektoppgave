@@ -135,7 +135,7 @@ namespace Web2Prosjektoppgave.api.Controllers
         }
 
         // Post
-        //[Authorize]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create(BlogCreateForm blog)
         {
@@ -146,22 +146,11 @@ namespace Web2Prosjektoppgave.api.Controllers
 
             var blogModel = new Blog()
             {
-                //CreatedById = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value),
-                //ModifiedById = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value),
-                CreatedById = 1,
-                ModifiedById = 1,
+                CreatedById = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value),
+                ModifiedById = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value),
                 Title = blog.Title,
                 Description = blog.Description,
             };
-
-            //var requirement = new UserRequirement(blogModel.CreatedById);
-            // Check if the current user has the same ID as the one being requested
-            //var authorizationResult = await _authorizationService.AuthorizeAsync(User, null, requirement);
-
-            //if (!authorizationResult.Succeeded)
-            //{
-            //    return new ForbidResult();
-            //}
 
             await _blogRepository.Insert(blogModel);
 
@@ -169,6 +158,7 @@ namespace Web2Prosjektoppgave.api.Controllers
         }
 
         // Put
+        [Authorize]
         [HttpPut]
         public async Task<IActionResult> Edit()
         {
@@ -176,6 +166,7 @@ namespace Web2Prosjektoppgave.api.Controllers
         }
 
         // Delete
+        [Authorize]
         [HttpDelete]
         public async Task<IActionResult> Delete()
         {

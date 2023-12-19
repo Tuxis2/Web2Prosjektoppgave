@@ -1,5 +1,9 @@
-﻿@inherits LayoutComponentBase
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider GetAuthenticationStateAsync
+
 
 <div class="page">
     <div class="sidebar">
@@ -8,19 +12,20 @@
 
     <main>
         <div class="top-row px-4">
-           @*  @if (User.Identity.IsAuthenticated)
+            @if (User != null && User.Identity.IsAuthenticated)
             {
-                @Html.AntiForgeryToken()
                 <a href="/">Logout</a>
             }
             else
-            { *@
+            {
                 <a href="/Login">Login</a>
-            @* } *@
+            }
         </div>
 
         <article class="content px-4">
-            @Body
+            <CascadingValue Value="this">
+                @Body
+            </CascadingValue>
         </article>
     </main>
 </div>
@@ -32,6 +37,8 @@
 </div>
 
 @code {
+    public ClaimsPrincipal User { get; set; }
+
     private void GoToLogin()
     {
         NavigationManager.NavigateTo("/Login");
@@ -41,4 +48,13 @@
     {
 
     }
+
+    public async Task RefreshAuth()
+    {
+        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        User = authstate.User;
+
+        StateHasChanged();
+    }
+
 }

@@ -50,6 +50,11 @@
         var response = await HttpHelper.PostAsync("https://localhost:7078/BlogPost", blogPostCreateForm);
 
         getError = !response.IsSuccess;
+
+        if (response.IsSuccess)
+        {
+            GoBack();
+        }
     }
 
     private void GoBack()

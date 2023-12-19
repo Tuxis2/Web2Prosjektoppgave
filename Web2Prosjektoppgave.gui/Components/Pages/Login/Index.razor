@@ -3,6 +3,7 @@
 @using System.Text.Json
 @using System.Text
 @using Microsoft.AspNetCore.Components
+@using Web2Prosjektoppgave.gui.Components.Layout
 @using Web2Prosjektoppgave.shared.ViewModels.Login
 
 @inject IHttpClientFactory ClientFactory
@@ -66,18 +67,9 @@
         {
             var tokenString = await response.Content.ReadAsStringAsync();
 
-            if (loginForm.RememberMe)
-            {
-                // Store token in local storage and sessionStorage
-                await JsRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", tokenString);
-                await JsRuntime.InvokeVoidAsync("sessionStorage.setItem", "authToken", tokenString);
-            }
-            else
-            {
-                // Store token only in localStorage
-                await JsRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", tokenString);
-            }
+            await JsRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", tokenString);
 
+            
             // Redirect to home after successful login
             NavigationManager.NavigateTo("/");
         }
